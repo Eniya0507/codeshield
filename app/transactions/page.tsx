@@ -212,21 +212,24 @@ export default function TransactionsPage() {
                             <span>{tx.status}</span>
                           </span>
                         </td>
-                        <td className="py-4 px-4 text-right">
+                         <td className="py-4 px-4 text-right">
                           <div className="flex items-center justify-end space-x-2">
                             <a
                               href={
-                                tx.txId.length === 52 && !tx.txId.startsWith('X402') && !tx.txId.startsWith('2UBJM')
+                                // Real Algorand TxID: exactly 52 base32 chars, no dashes or spaces
+                                /^[A-Z2-7]{52}$/.test(tx.txId)
                                   ? `https://lora.algokit.io/testnet/transaction/${tx.txId}`
-                                  : 'https://lora.algokit.io/testnet/account/K754AWDJAZM3SIVPZJ47432MDFCGGAKZMWW5VFFO6CZXAY2OQYI3RRPDXE'
+                                  : `https://lora.algokit.io/testnet/account/ZVN36WHENHPT5QDKYNVXLASJD3JRR6VD6VHJ4M2ZDLZ7Z3XPUFVMG7FOBA`
                               }
                               target="_blank"
                               rel="noreferrer"
                               className="p-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-emerald-400 transition-all flex items-center space-x-1 font-mono text-[11px]"
-                              title="View on Algorand Lora Explorer"
+                              title={/^[A-Z2-7]{52}$/.test(tx.txId) ? "View real transaction on Lora Explorer" : "View your wallet on Lora Explorer"}
                             >
                               <ExternalLink className="w-3.5 h-3.5" />
-                              <span className="hidden sm:inline">Lora</span>
+                              <span className="hidden sm:inline">
+                                {/^[A-Z2-7]{52}$/.test(tx.txId) ? 'Lora ✓' : 'Wallet'}
+                              </span>
                             </a>
                             <button
                               onClick={() => setSelectedTx(tx)}
