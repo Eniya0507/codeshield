@@ -103,14 +103,20 @@ export default function WorkspacePage() {
 
   const handleRunAudit = async () => {
     setIsLoading(true);
-    setStatusMessage('🤖 Autonomous AI Agent: Executing x402 payment audit flow...');
+
+    // ← Show immediately whether wallet is connected for REAL signing
+    if (walletSigner) {
+      setStatusMessage(`🔐 Pera Wallet connected (${walletSigner.address.slice(0, 8)}...) — initiating REAL on-chain payment...`);
+    } else {
+      setStatusMessage('⚠️ No wallet connected — running in DEMO mode. Connect Pera Wallet for real on-chain transactions.');
+    }
 
     try {
       const reqId = `REQ-${Date.now().toString().slice(-6)}`;
       setLastRequestId(reqId);
       const data = await executeAgentx402Fetch(
         '/api/audit',
-        walletSigner,  // ← real Pera Wallet signer (or null for demo)
+        walletSigner,
         { code: generatedCode, language: 'solidity' },
         { onProgress: (msg: string) => setStatusMessage(msg) }
       );
@@ -120,7 +126,6 @@ export default function WorkspacePage() {
       setReport(data);
       dbStore.addReport(data);
 
-      // Use real on-chain TxID if available, otherwise generate a deterministic demo ID
       const realTxId: string = data._realTxId
         || (data.reportHash
           ? `${data.reportHash.slice(2, 14).toUpperCase()}XYTXBCXD4JJWYWKE`

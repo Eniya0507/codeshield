@@ -101,12 +101,8 @@ export async function executeAgentx402Fetch(
 
       } catch (e: any) {
         const msg = e?.message || String(e);
-        // User rejected or wallet unavailable — fall back to simulated proof
-        if (msg.toLowerCase().includes('cancel') || msg.toLowerCase().includes('reject') || msg.toLowerCase().includes('user')) {
-          onProgress?.(`[${now()}] ⚠️ Wallet signing cancelled by user. Using simulated proof for demo.`);
-        } else {
-          onProgress?.(`[${now()}] ⚠️ On-chain tx failed (${msg.slice(0, 60)}). Using simulated proof for demo.`);
-        }
+        // Show FULL error so we can debug exactly what went wrong
+        onProgress?.(`[${now()}] ⚠️ Signing error: ${msg}. Falling back to demo proof.`);
       }
     } else {
       onProgress?.(`[${now()}] 7. No wallet connected — using x402 simulated payment proof for demo.`);
