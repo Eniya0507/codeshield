@@ -313,7 +313,7 @@ export default function TransactionsPage() {
                   </div>
 
                   <a
-                    href="https://lora.algokit.io/testnet/account/K754AWDJAZM3SIVPZJ47432MDFCGGAKZMWW5VFFO6CZXAY2OQYI3RRPDXE"
+                    href="https://lora.algokit.io/testnet/account/CXMND6NPMOCM7ZO2SJ3FM67AGU2XRJTFKXXICPYUUGUP6IDXMMWZF6ZWPU"
                     target="_blank"
                     rel="noreferrer"
                     className="w-full py-3 px-4 rounded-xl font-bold text-xs bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition-colors flex items-center justify-center space-x-2 shadow-lg"

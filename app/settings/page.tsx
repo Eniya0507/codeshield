@@ -12,7 +12,7 @@ export default function SettingsPage() {
 
   const [algodServer, setAlgodServer] = useState('https://testnet-api.algonode.cloud');
   const [facilitatorUrl, setFacilitatorUrl] = useState('https://facilitator.goplausible.xyz');
-  const [receiverAddress, setReceiverAddress] = useState('K754AWDJAZM3SIVPZJ47432MDFCGGAKZMWW5VFFO6CZXAY2OQYI3RRPDXE');
+  const [receiverAddress, setReceiverAddress] = useState('CXMND6NPMOCM7ZO2SJ3FM67AGU2XRJTFKXXICPYUUGUP6IDXMMWZF6ZWPU');
 
   const handleSave = () => {
     setSaved(true);

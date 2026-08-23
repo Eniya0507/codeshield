@@ -29,7 +29,7 @@ When an AI coding agent generates code, it evaluates risk, requests an audit fro
 | :--- | :--- | :--- |
 | **Payment Asset ID (USDC Testnet)** | `10458941` | [View USDC ASA on Lora Explorer](https://lora.algokit.io/testnet/asset/10458941) · 6 Decimal Micro-Units |
 | **Payment Asset ID (USDC Mainnet)** | `31566704` | [View USDC ASA on Mainnet Lora](https://lora.algokit.io/mainnet/asset/31566704) |
-| **CodeShield Treasury Receiver** | `K754AWDJAZM3SIVPZJ47432MDFCGGAKZMWW5VFFO6CZXAY2OQYI3RRPDXE` | [View Treasury Account on Lora](https://lora.algokit.io/testnet/account/K754AWDJAZM3SIVPZJ47432MDFCGGAKZMWW5VFFO6CZXAY2OQYI3RRPDXE) |
+| **CodeShield Treasury Receiver** | `CXMND6NPMOCM7ZO2SJ3FM67AGU2XRJTFKXXICPYUUGUP6IDXMMWZF6ZWPU` | [View Treasury Account on Lora](https://lora.algokit.io/testnet/account/CXMND6NPMOCM7ZO2SJ3FM67AGU2XRJTFKXXICPYUUGUP6IDXMMWZF6ZWPU) |
 | **Facilitator Fee Payer** | `ZMFK2OI7ZBD2U27ISERZC4S6LKM6WMFJPZQ4MYNJDZ2VNBNMBA67RA22AA` | GoPlausible Facilitator Fee-Sponsor Account |
 | **Algorand Testnet CAIP-2 ID** | `algorand:SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI=` | Standard W3C/CAIP-2 Identifier for Algorand Testnet |
 | **Algorand Mainnet CAIP-2 ID** | `algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8=` | Standard CAIP-2 Identifier for Algorand Mainnet |
@@ -131,7 +131,7 @@ ALGOD_PORT=
 ALGORAND_NETWORK=testnet
 
 # CodeShield Gateway Receiver Address
-ALGORAND_RECEIVER_ADDRESS=K754AWDJAZM3SIVPZJ47432MDFCGGAKZMWW5VFFO6CZXAY2OQYI3RRPDXE
+ALGORAND_RECEIVER_ADDRESS=CXMND6NPMOCM7ZO2SJ3FM67AGU2XRJTFKXXICPYUUGUP6IDXMMWZF6ZWPU
 
 # USDC Token Asset ID (Testnet: 10458941, Mainnet: 31566704)
 USDC_ASSET_ID=10458941
@@ -186,7 +186,7 @@ X-Payment-Required: true
       "scheme": "exact",
       "price": "$0.05",
       "network": "algorand:SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI=",
-      "payTo": "K754AWDJAZM3SIVPZJ47432MDFCGGAKZMWW5VFFO6CZXAY2OQYI3RRPDXE",
+      "payTo": "CXMND6NPMOCM7ZO2SJ3FM67AGU2XRJTFKXXICPYUUGUP6IDXMMWZF6ZWPU",
       "extra": { "asset": 10458941, "feePayer": "ZMFK2OI7ZBD2U27ISERZC4S6LKM6WMFJPZQ4MYNJDZ2VNBNMBA67RA22AA" }
     }
   ]

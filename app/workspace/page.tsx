@@ -68,9 +68,8 @@ export default function WorkspacePage() {
       ? {
           address: activeAddress,
           signTransactions: async (txns) => {
-            // Pass encoded Uint8Array to Pera Wallet — triggers signing popup on mobile
-            const encodedTxns = txns.map((t) => t.toByte());
-            const signed = await signTransactions(encodedTxns);
+            // @txnlab/use-wallet accepts algosdk.Transaction[] directly
+            const signed = await signTransactions(txns);
             // Filter nulls (skipped/rejected txns)
             return (signed as (Uint8Array | null)[]).filter((s): s is Uint8Array => s !== null);
           },

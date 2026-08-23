@@ -15,7 +15,7 @@ export function getAlgorandConfig(): AlgorandConfig {
   const isTestnet = network === 'testnet';
 
   const defaultReceiver = isTestnet
-    ? 'K754AWDJAZM3SIVPZJ47432MDFCGGAKZMWW5VFFO6CZXAY2OQYI3RRPDXE'
+    ? 'CXMND6NPMOCM7ZO2SJ3FM67AGU2XRJTFKXXICPYUUGUP6IDXMMWZF6ZWPU'
     : (process.env.ALGORAND_RECEIVER_ADDRESS || 'NOT_CONFIGURED');
 
   return {
