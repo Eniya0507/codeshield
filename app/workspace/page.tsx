@@ -59,26 +59,23 @@ export default function WorkspacePage() {
     };
   }, []);
 
-  // Pera Wallet integration — get connected wallet address & signTransactions
-  let walletSigner: AgentSigner | null = null;
-  try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const { activeAddress, signTransactions } = useWallet();
-    if (activeAddress && signTransactions) {
-      walletSigner = {
-        address: activeAddress,
-        signTransactions: async (txns) => {
-          // @txnlab/use-wallet-react signTransactions accepts encoded transactions
-          const encodedTxns = txns.map((t) => t.toByte());
-          const signed = await signTransactions(encodedTxns);
-          // Filter out any null values (unsigned/skipped txns)
-          return (signed as (Uint8Array | null)[]).filter((s): s is Uint8Array => s !== null);
-        },
-      };
-    }
-  } catch {
-    // useWallet not available outside WalletProvider — safe to ignore
-  }
+  // ✅ Always call useWallet at top level (Rules of Hooks — no try/catch)
+  const { activeAddress, signTransactions } = useWallet();
+
+  // Build walletSigner only when wallet is actually connected
+  const walletSigner: AgentSigner | null =
+    activeAddress && signTransactions
+      ? {
+          address: activeAddress,
+          signTransactions: async (txns) => {
+            // Pass encoded Uint8Array to Pera Wallet — triggers signing popup on mobile
+            const encodedTxns = txns.map((t) => t.toByte());
+            const signed = await signTransactions(encodedTxns);
+            // Filter nulls (skipped/rejected txns)
+            return (signed as (Uint8Array | null)[]).filter((s): s is Uint8Array => s !== null);
+          },
+        }
+      : null;
 
   const auditCostUsdc = 0.05;
   const policyCheck = evaluateSpendingPolicy(auditCostUsdc, walletBalanceUsdc, 'CodeShield');

@@ -37,7 +37,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (!manager) {
-    return <>{children}</>;
+    // Don't render children until WalletProvider is ready.
+    // This ensures useWallet() is always called inside WalletProvider.
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="text-slate-400 text-sm font-mono animate-pulse">Initializing wallet...</div>
+      </div>
+    );
   }
 
   return (
