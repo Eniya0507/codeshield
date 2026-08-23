@@ -5,10 +5,11 @@ import { dbStore } from '@/lib/store/db';
 import { Sidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
 import { CodeEditorWithDiff } from '@/components/CodeEditorWithDiff';
-import { executeAgentx402Fetch } from '@/lib/x402/client';
+import { executeAgentx402Fetch, AgentSigner } from '@/lib/x402/client';
 import { evaluateSpendingPolicy } from '@/lib/policy/spendingPolicy';
 import { AuditReportData } from '@/lib/audit/engine';
 import { SAMPLE_VULNERABLE_SOLIDITY, SAMPLE_CLEAN_SOLIDITY } from '@/lib/audit/samples';
+import { useWallet } from '@txnlab/use-wallet-react';
 import {
   Bot,
   Sparkles,
@@ -25,6 +26,7 @@ import {
   ChevronUp,
   Bug,
   Cpu,
+  Wallet,
 } from 'lucide-react';
 
 export default function WorkspacePage() {
@@ -57,8 +59,30 @@ export default function WorkspacePage() {
     };
   }, []);
 
+  // Pera Wallet integration — get connected wallet address & signTransactions
+  let walletSigner: AgentSigner | null = null;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const { activeAddress, signTransactions } = useWallet();
+    if (activeAddress && signTransactions) {
+      walletSigner = {
+        address: activeAddress,
+        signTransactions: async (txns) => {
+          // @txnlab/use-wallet-react signTransactions accepts encoded transactions
+          const encodedTxns = txns.map((t) => t.toByte());
+          const signed = await signTransactions(encodedTxns);
+          // Filter out any null values (unsigned/skipped txns)
+          return (signed as (Uint8Array | null)[]).filter((s): s is Uint8Array => s !== null);
+        },
+      };
+    }
+  } catch {
+    // useWallet not available outside WalletProvider — safe to ignore
+  }
+
   const auditCostUsdc = 0.05;
   const policyCheck = evaluateSpendingPolicy(auditCostUsdc, walletBalanceUsdc, 'CodeShield');
+
 
   const handleGenerate = () => {
     setIsLoading(true);
@@ -89,7 +113,7 @@ export default function WorkspacePage() {
       setLastRequestId(reqId);
       const data = await executeAgentx402Fetch(
         '/api/audit',
-        null,
+        walletSigner,  // ← real Pera Wallet signer (or null for demo)
         { code: generatedCode, language: 'solidity' },
         { onProgress: (msg: string) => setStatusMessage(msg) }
       );
@@ -98,6 +122,13 @@ export default function WorkspacePage() {
       setWalletBalanceUsdc(newBal);
       setReport(data);
       dbStore.addReport(data);
+
+      // Use real on-chain TxID if available, otherwise generate a deterministic demo ID
+      const realTxId: string = data._realTxId
+        || (data.reportHash
+          ? `${data.reportHash.slice(2, 14).toUpperCase()}XYTXBCXD4JJWYWKE`
+          : `X402${Date.now().toString(36).toUpperCase()}CODESHIELD`);
+
       dbStore.addTransaction({
         id: `TX-${Date.now().toString().slice(-4)}`,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
@@ -106,13 +137,13 @@ export default function WorkspacePage() {
         asset: 'USDC (10458941)',
         network: 'Algorand Testnet',
         status: 'Completed',
-        txId: data.reportHash ? `2UBJM${data.reportHash.slice(2, 14).toUpperCase()}XYTXBCXD4JJWYWKE` : `2UBJM${Date.now()}XYTXBCXD4JJWYWKE`,
+        txId: realTxId,
         auditId: data.auditId,
         provider: 'GoPlausible Facilitator',
       });
       dbStore.addActivityEvent({
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        event: `Autonomous x402 payment settled ($0.05 USDC). Audit ${data.auditId} returned score ${data.securityScore}/100.`,
+        event: `Autonomous x402 payment settled ($0.05 USDC). TxID: ${realTxId.slice(0, 16)}... Audit ${data.auditId} score: ${data.securityScore}/100.`,
         type: data.status === 'passed' ? 'success' : 'warning',
       });
       setStatusMessage(
@@ -127,6 +158,7 @@ export default function WorkspacePage() {
       setIsLoading(false);
     }
   };
+
 
   const handleAutoFix = async () => {
     if (!report || report.issues.length === 0) return;
@@ -167,7 +199,7 @@ export default function WorkspacePage() {
       setLastRequestId(reqId);
       const data = await executeAgentx402Fetch(
         '/api/audit',
-        null,
+        walletSigner,  // ← real Pera Wallet signer
         { code: codeToAudit, language: 'solidity' },
         { onProgress: (msg: string) => setStatusMessage(msg) }
       );
@@ -176,6 +208,13 @@ export default function WorkspacePage() {
       setWalletBalanceUsdc(newBal);
       setReport(data);
       dbStore.addReport(data);
+
+      // Use real on-chain TxID if available
+      const realTxId: string = data._realTxId
+        || (data.reportHash
+          ? `${data.reportHash.slice(2, 14).toUpperCase()}YTXBCXD4REAUDIT`
+          : `X402${Date.now().toString(36).toUpperCase()}REAUDIT`);
+
       dbStore.addTransaction({
         id: `TX-${Date.now().toString().slice(-4)}`,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
@@ -184,13 +223,13 @@ export default function WorkspacePage() {
         asset: 'USDC (10458941)',
         network: 'Algorand Testnet',
         status: 'Completed',
-        txId: data.reportHash ? `2UBJM${data.reportHash.slice(2, 14).toUpperCase()}XYTXBCXD4JJWYWKE` : `2UBJM${Date.now()}XYTXBCXD4JJWYWKE`,
+        txId: realTxId,
         auditId: data.auditId,
         provider: 'GoPlausible Facilitator',
       });
       dbStore.addActivityEvent({
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        event: `Re-audit completed. Security score elevated to 100/100 (Clean verification).`,
+        event: `Re-audit completed. TxID: ${realTxId.slice(0, 16)}... Security score elevated to ${data.securityScore}/100.`,
         type: 'success',
       });
       setGeneratedCode(codeToAudit);

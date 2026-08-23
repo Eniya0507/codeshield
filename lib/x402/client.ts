@@ -1,10 +1,13 @@
 import { x402ChallengePayload } from './types';
 import { evaluateSpendingPolicy, DEFAULT_AGENT_POLICY } from '../policy/spendingPolicy';
 import { dbStore } from '../store/db';
+import { buildAlgorandPaymentTransaction, broadcastSignedTransaction } from '../algorand/payment';
+import { getAlgorandConfig } from '../algorand/config';
+import algosdk from 'algosdk';
 
 export interface AgentSigner {
   address: string;
-  signTransactions: (txns: any[]) => Promise<any[]>;
+  signTransactions: (txns: algosdk.Transaction[]) => Promise<Uint8Array[]>;
 }
 
 export interface x402ClientOptions {
@@ -20,6 +23,7 @@ export async function executeAgentx402Fetch(
 ): Promise<any> {
   const onProgress = options?.onProgress;
   const policy = options?.customPolicy || DEFAULT_AGENT_POLICY;
+  const config = getAlgorandConfig();
 
   const now = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
@@ -66,22 +70,54 @@ export async function executeAgentx402Fetch(
 
     onProgress?.(`[${now()}] 5. Policy Check Passed ✓ (Remaining daily budget: $${policyResult.remainingDailyBudget.toFixed(2)} USDC)`);
 
-    // Step 3: Sign payment transaction / proof
-    onProgress?.(`[${now()}] 6. Creating & signing x402 payment proof for receiver: ${requirement.payTo.slice(0, 8)}...`);
+    // Step 3: Build & Sign real on-chain Algorand transaction via Pera Wallet
+    const receiverAddress = requirement.payTo || config.receiverAddress;
+    onProgress?.(`[${now()}] 6. Building Algorand USDC payment txn → Receiver: ${receiverAddress.slice(0, 10)}...`);
 
-    let paymentProof = `X402-PROOF-AVM-${Date.now()}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+    let realTxId: string | undefined;
 
-    if (signer && signer.signTransactions) {
+    if (signer && signer.address && signer.signTransactions) {
       try {
-        await signer.signTransactions([{ mock: false }]);
-      } catch (e) {
-        console.info('Wallet interaction signed:', e);
+        // Build the unsigned transaction
+        const unsignedTxn = await buildAlgorandPaymentTransaction({
+          fromAddress: signer.address,
+          toAddress: receiverAddress,
+          amountUsdc: priceNum,
+        });
+
+        onProgress?.(`[${now()}] 7. Requesting Pera Wallet signature... (check your Pera Wallet mobile app)`);
+
+        // Request Pera Wallet to sign — this triggers the Pera Wallet popup/mobile notification
+        const signedBytes = await signer.signTransactions([unsignedTxn]);
+
+        onProgress?.(`[${now()}] 7b. Pera Wallet signed ✓ Broadcasting to Algorand Testnet...`);
+
+        // Broadcast signed transaction to Algod node and wait for confirmation
+        const { txId, confirmedRound } = await broadcastSignedTransaction(signedBytes[0]);
+        realTxId = txId;
+
+        onProgress?.(`[${now()}] 8. ✅ Transaction Confirmed on-chain! TxID: ${txId} (Round: ${confirmedRound})`);
+        onProgress?.(`[${now()}] 8b. View on Lora: https://lora.algokit.io/testnet/transaction/${txId}`);
+
+      } catch (e: any) {
+        const msg = e?.message || String(e);
+        // User rejected or wallet unavailable — fall back to simulated proof
+        if (msg.toLowerCase().includes('cancel') || msg.toLowerCase().includes('reject') || msg.toLowerCase().includes('user')) {
+          onProgress?.(`[${now()}] ⚠️ Wallet signing cancelled by user. Using simulated proof for demo.`);
+        } else {
+          onProgress?.(`[${now()}] ⚠️ On-chain tx failed (${msg.slice(0, 60)}). Using simulated proof for demo.`);
+        }
       }
+    } else {
+      onProgress?.(`[${now()}] 7. No wallet connected — using x402 simulated payment proof for demo.`);
     }
 
-    onProgress?.(`[${now()}] 7. Submitting payment to Facilitator (${challenge.facilitatorUrl || 'GoPlausible'})`);
+    // Build payment proof (real TxID if available, else signed demo proof)
+    const paymentProof = realTxId ?? `X402-PROOF-AVM-${Date.now()}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
 
-    // Step 4: Resubmit request with payment signature headers
+    onProgress?.(`[${now()}] 8. Submitting proof to CodeShield gateway (Facilitator: ${challenge.facilitatorUrl || 'GoPlausible'})`);
+
+    // Step 4: Resubmit request with payment proof headers
     const paidRes = await fetch(url, {
       method: 'POST',
       headers: {
@@ -89,14 +125,19 @@ export async function executeAgentx402Fetch(
         'Payment-Signature': paymentProof,
         'X-Payment-Proof': paymentProof,
         'Authorization': `Bearer ${paymentProof}`,
+        ...(realTxId ? { 'X-Algorand-TxId': realTxId } : {}),
       },
       body: JSON.stringify(bodyData),
     });
 
     if (paidRes.ok) {
-      onProgress?.(`[${now()}] 8. Payment Verified on Algorand Testnet ✓ Security audit unlocked!`);
+      onProgress?.(`[${now()}] 9. Payment Verified ✓ Security audit unlocked!`);
       const report = await paidRes.json();
-      onProgress?.(`[${now()}] 9. Security Audit Complete! Score: ${report.securityScore}/100`);
+      // Attach the real TxID to the report so workspace can record it properly
+      if (realTxId) {
+        report._realTxId = realTxId;
+      }
+      onProgress?.(`[${now()}] 10. Security Audit Complete! Score: ${report.securityScore}/100`);
       return report;
     } else {
       const errJson = await paidRes.json().catch(() => ({}));
