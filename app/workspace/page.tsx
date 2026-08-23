@@ -268,6 +268,20 @@ export default function WorkspacePage() {
             </div>
           )}
 
+          {/* Wallet Signer Status Debug Badge */}
+          <div className={`text-[11px] font-mono px-3 py-1.5 rounded-xl border flex items-center space-x-2 w-fit ${
+            walletSigner
+              ? 'bg-emerald-950/60 border-emerald-700 text-emerald-300'
+              : 'bg-amber-950/60 border-amber-700 text-amber-300'
+          }`}>
+            <span>{walletSigner ? '🔐' : '⚠️'}</span>
+            <span>
+              {walletSigner
+                ? `Signing Ready: ${walletSigner.address.slice(0, 10)}...`
+                : `Wallet not connected for signing — connect Pera Wallet above`}
+            </span>
+          </div>
+
           {/* Workspace 3-Column Desktop Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* LEFT COLUMN: Prompt Input & Quick Examples (Col Span 3) */}
